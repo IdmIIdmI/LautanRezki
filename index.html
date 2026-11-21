@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Misi Selam & Panah — Misteri Dasar</title>
+<style>
+*{box-sizing:border-box;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}body{margin:0;background:#061e2a;color:#fff;font-family:system-ui,Arial;overflow:hidden}
+#game{height:100dvh;width:100vw;position:relative;background:linear-gradient(#087c9a 0%,#07566d 35%,#043445 68%,#09251d 100%);overflow:hidden}
+canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.hud{position:absolute;z-index:3;background:#102936d9;border:2px solid #d8a83e;border-radius:14px;box-shadow:0 3px 12px #0008;padding:8px 12px}
+#top{position:absolute;z-index:6;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+#title{font-weight:900;text-align:center;color:#ffe28a;font-size:clamp(14px,3.6vw,22px);line-height:1.05}
+.small{font-size:12px;color:#cdefff}.stat{font-weight:800;font-size:14px}
+#mission{position:absolute;z-index:6;left:8px;top:74px;width:min(180px,43vw);font-size:12px}
+#mission b{color:#ffe28a;font-size:14px}#mission div{margin:3px 0}
+#right{position:absolute;left:8px;bottom:12px;display:grid;grid-template-columns:repeat(2,52px);gap:5px;z-index:10;pointer-events:auto}
+button{position:relative;z-index:11;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;border:2px solid #d9a938;background:linear-gradient(#273c50,#091c2a);color:white;font-weight:800;border-radius:14px;padding:11px 12px;box-shadow:0 3px 8px #0007;cursor:pointer}#zikbtn{width:100%;font-size:9px;padding:4px 2px;border-radius:9px;background:linear-gradient(#1c8c68,#064632);}
+button:active{transform:scale(.96)}button:disabled{opacity:.45}
+.action{width:52px;height:48px;border-radius:12px;padding:2px;font-size:10px}
+#bottom{position:absolute;bottom:0;left:0;right:0;display:block;pointer-events:none}
+#zikir{position:absolute;right:8px;bottom:12px;width:112px;text-align:center;padding:7px 6px;z-index:10;background:#102936e8;border:2px solid #d8a83e;border-radius:14px;pointer-events:auto}
+#ziktext{color:#ffe48a;font-size:9px;font-weight:900}
+#count{font-size:14px;font-weight:900}
+#rope{height:6px;background:#182a35;border-radius:8px;overflow:hidden;margin:3px 0}
+#ropefill{height:100%;width:0;background:linear-gradient(90deg,#24d4e7,#ffe278);transition:width .15s}
+#pullhint{font-size:8px;color:#ffdf82}
+#joystick{display:none;position:absolute;left:8px;bottom:105px;pointer-events:auto;width:94px;height:94px;border-radius:50%;border:2px solid #73eaff;background:#092b42aa;display:flex;align-items:center;justify-content:center;color:#8ef1ff;font-size:24px;z-index:3}
+#result{position:absolute;z-index:5;left:50%;top:50%;transform:translate(-50%,-50%);width:min(88vw,360px);display:none;text-align:center;background:#102a37f2;border:3px solid #f2c450;border-radius:18px;padding:18px;box-shadow:0 0 40px #0009}
+#result .emoji{font-size:58px}#result h2{margin:5px;color:#ffe28a}#result p{margin:8px}
+#shop{position:absolute;z-index:5;display:none;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,430px);max-height:80vh;overflow:auto;background:#102a37f5;border:3px solid #f2c450;border-radius:18px;padding:14px}
+.shoprow{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid #446;padding:9px 0}
+#toast{position:absolute;z-index:12;top:44%;left:50%;transform:translate(-50%,-50%);background:#071d29dd;border:1px solid #ffe08a;border-radius:12px;padding:10px 16px;display:none;text-align:center}
+@media(max-height:600px){#mission{top:65px}#right{bottom:6px;gap:4px}.action{width:48px;height:43px;font-size:9px}#zikir{bottom:6px;padding:5px;width:100px}#count{font-size:17px}}
+
+#joyWrap{position:absolute;left:8px;bottom:12px;width:104px;height:104px;z-index:10;touch-action:none;display:flex;align-items:center;justify-content:center}#joyBase{position:absolute;inset:3px;border-radius:50%;background:radial-gradient(circle,#315b70aa,#041d2bbd);border:2px solid #9de8f6aa;box-shadow:inset 0 0 12px #0008}#joyKnob{position:absolute;width:42px;height:42px;border-radius:50%;background:linear-gradient(#d9f6ff,#27718e);border:2px solid #ffe18a;box-shadow:0 2px 8px #0008}#joyWrap small{position:absolute;bottom:-1px;font-size:8px;font-weight:900;text-shadow:0 1px 3px #000;color:#dffaff}#right{grid-template-columns:repeat(2,52px)}#powerBox{position:absolute;right:9px;top:74px;width:68px;height:68px;border-radius:50%;z-index:9;background:conic-gradient(#39d9a0 calc(var(--p,0)*1%),#284452 0);display:flex;align-items:center;justify-content:center;padding:5px;box-shadow:0 2px 8px #0008}#powerInner{width:56px;height:56px;border-radius:50%;background:#082b3ce8;display:flex;align-items:center;justify-content:center;flex-direction:column;font-weight:900}#powerLabel{font-size:10px}#weapon{position:absolute;z-index:2;pointer-events:none;left:50%;bottom:-4px;transform:translateX(-50%);width:min(25vw,112px);height:155px;opacity:.96}#shootHold{position:absolute;right:8px;bottom:72px;width:66px;height:62px;z-index:10;font-size:11px}#pullBtn{position:absolute;right:8px;bottom:8px;width:66px;height:56px;z-index:10;font-size:11px}#right{display:block}#right .action{position:absolute;left:112px;bottom:12px;width:54px;height:48px}#shootBtn{position:absolute;right:8px;bottom:72px;width:66px;height:62px;z-index:10;font-size:11px}#pullBtn{right:8px;bottom:8px}#powerBox{pointer-events:none}#zikir{bottom:88px;right:8px;width:86px;padding:4px 4px;border-radius:10px}#mission{max-width:135px} @media(max-height:620px){#joyWrap{width:88px;height:88px;bottom:6px}#joyKnob{width:36px;height:36px}#shootBtn{bottom:58px;width:58px;height:54px}#pullBtn{bottom:4px;width:58px;height:48px}#weapon{height:125px;width:min(22vw,90px)}#zikir{bottom:84px;right:5px;width:78px;padding:4px}#powerBox{top:62px;width:58px;height:58px}#powerInner{width:48px;height:48px}}
+
+/* UI kemas: butang tahan panah di tengah, misi kecil, joystick lutsinar */
+#shootBtn{left:50%;right:auto;transform:translateX(-50%);bottom:118px;width:62px;height:54px;border-radius:50%;font-size:10px;padding:3px;background:linear-gradient(#34546aee,#081c2bee);}
+#shootBtn:active{transform:translateX(-50%) scale(.96)}
+#mission{width:112px;max-width:112px;padding:5px 7px;border-radius:9px;font-size:9px;opacity:.82}
+#mission b{font-size:11px}#mission div{margin:2px 0;font-size:9px}
+#joyBase{background:radial-gradient(circle,#315b7040,#041d2b50);border-color:#9de8f655;box-shadow:inset 0 0 8px #0003}
+#joyKnob{opacity:.58;background:linear-gradient(#d9f6ff99,#27718e99);border-color:#ffe18a88;box-shadow:0 2px 5px #0004}
+#joyWrap small{opacity:.55}
+@media(max-height:620px){#shootBtn{bottom:94px;width:54px;height:48px}}
+
+
+/* Butang aksi futuristik: PANAH & TARIK bersebelahan */
+#shootBtn,#pullBtn{bottom:12px!important;width:68px!important;height:60px!important;border-radius:18px!important;padding:4px!important;font-size:11px!important;letter-spacing:.4px!important;backdrop-filter:blur(5px);box-shadow:0 0 10px #00d9ff55,inset 0 0 10px #ffffff18;transition:transform .12s,filter .12s,box-shadow .12s}
+#shootBtn{right:82px!important;border:2px solid #5deaff!important;background:linear-gradient(145deg,#12617b,#062838 65%,#03151f)!important;color:#e9fcff!important}
+#shootBtn::before{content:'✦';position:absolute;top:3px;right:6px;color:#9af5ff;font-size:10px;text-shadow:0 0 8px #00eaff}
+#shootBtn small{font-size:8px;color:#9df3ff;letter-spacing:1px}
+#shootBtn:active{transform:scale(.94);box-shadow:0 0 18px #00eaff}
+#pullBtn{right:8px!important;border:2px solid #ffc85a!important;background:linear-gradient(145deg,#80501a,#38220a 65%,#1b1005)!important;color:#fff4d5!important}
+#pullBtn:active{transform:scale(.94);box-shadow:0 0 18px #ffbf43}
+@media(max-height:620px){#shootBtn,#pullBtn{bottom:6px!important;width:60px!important;height:50px!important}#shootBtn{right:72px!important}#pullBtn{right:6px!important}}
+
+</style>
+</head>
+<body>
+<div id="game">
+<canvas id="c"></canvas><div id="weapon" aria-hidden="true"></div><div id="powerBox"><div id="powerInner"><small style="font-size:8px">KUASA</small><div id="powerLabel">0%</div></div></div><button id="shootBtn">🏹 PANAH<br><small>TAHAN</small></button><button id="pullBtn" onclick="pullStart()">🪢 TARIK</button>
+<div class="hud" id="top"><div><div class="stat">🤿 Lutfy · Lv <span id="lv">1</span></div><div class="small">❤❤❤❤❤</div></div><div id="title">MISI SELAM & PANAH<br><span class="small">Misteri Dasar Sungai</span></div><div class="stat">⭐ <span id="score">0</span><br><span class="small">📦 <span id="collection">0</span>/100</span></div></div>
+<div class="hud" id="mission"><b>Misi</b><div>☑ Selam ke dasar</div><div id="mshot">☐ Panah sasaran rawak</div><div id="mzikir">☐ Subhanallah 20×</div><div id="mresult">☐ Dapatkan hasil</div></div>
+<div id="right"><div id="joyWrap"><div id="joyBase"></div><div id="joyKnob"></div><small>JOYSTIK 360°</small></div><button class="action" id="shopBtn" onclick="openShop()">🛒<br>KEDAI</button></div>
+<div id="bottom"><div class="hud" id="zikir"><div id="ziktext">Baca: Subhanallah 20×</div><div id="count">0 / 20</div><div id="rope"><div id="ropefill"></div></div><div id="pullhint">Tarik & zikir</div><button id="zikbtn" onclick="startListening()" disabled>🎤 BACA SENDIRI</button></div></div>
+<div id="result"><div class="emoji" id="itememoji">🎁</div><h2 id="itemname">Hasil!</h2><p id="itemdesc"></p><p id="itempoints" style="font-size:22px;font-weight:900"></p><button onclick="closeResult()">TERUS MENYELAM</button></div>
+<div id="shop"><h2 style="color:#ffe28a;margin-top:0">Kedai Peralatan</h2><p>Skor: <b id="shopscore"></b></p><div id="shopitems"></div><button onclick="closeShop()" style="width:100%;margin-top:10px">TUTUP</button></div>
+<div id="toast"></div>
+</div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');let W,H,scale=1;
+function resize(){W=canvas.width=innerWidth*devicePixelRatio;H=canvas.height=innerHeight*devicePixelRatio;scale=devicePixelRatio;ctx.setTransform(scale,0,0,scale,0,0);W=innerWidth;H=innerHeight}onresize=resize;resize();
+const items=[
+['🐟','Ikan keli besar',150,1],['🐟','Ikan toman',250,1],['🐠','Ikan hiasan',80,1],['🦈','Ikan misteri',400,1],['🦐','Udang',60,1],['🦀','Ketam',120,1],['🐚','Kerang',40,1],['🪸','Batu karang',0,1],['💎','Permata',700,1],['🪙','Syiling emas',300,1],['💍','Cincin',400,1],['📿','Tasbih',250,1],['🧭','Kompas lama',90,1],['🗝️','Kunci antik',80,1],['👟','Kasut buruk',-30,1],['🦷','Gigi palsu',-40,1],['🪵','Kayu reput',-20,1],['🥫','Tin kosong',-50,1],['🍼','Botol plastik',-35,1],['💵','Duit koyak',-10,1],['🍳','Kuali lama',-25,1],['🧸','Patung mainan',-15,1],['📱','Telefon rosak',-60,1],['🚲','Rim basikal',-40,1],['🧦','Stokin',-20,1],['🪥','Berus gigi',-15,1],['🕶️','Cermin mata',50,1],['⌚','Jam tangan',120,1],['🪙','Duit syiling',25,1],['🎁','Kotak misteri',250,1],['🪣','Baldi',-25,1],['🪑','Kerusi kecil',-30,1],['🧴','Botol minyak',-30,1],['🔔','Loceng',70,1],['🪙','Token',30,1],['🪞','Cermin',-20,1],['🧱','Bata',-15,1],['🪨','Batu',-10,1],['🧵','Kain',-15,1],['🪢','Tali lama',-15,1],['🐡','Ikan buntal',110,1],['🐙','Sotong',140,1],['🦑','Cumi-cumi',130,1],['🐢','Kura-kura',160,1],['🦪','Tiram mutiara',450,1],['🦞','Lobster',300,1],['🦆','Mainan itik',-10,1],['🪙','Syiling perak',100,1],['📦','Peti kecil',80,1],['🛞','Tayar',-45,1],['🪙','Syiling lama',90,1],['🧲','Magnet',35,1],['🧰','Kotak alat',100,1],['🔧','Spanar',25,1],['🔩','Skru',5,1],['🪛','Pemutar skru',20,1],['🪙','Duit tembaga',15,1],['🥄','Sudu',10,1],['🍴','Garpu',10,1],['🥤','Cawan plastik',-20,1],['🧃','Kotak minuman',-15,1],['🧢','Topi',-20,1],['🧥','Jaket',-25,1],['👕','Baju',-15,1],['👖','Seluar',-20,1],['🩴','Selipar',-25,1],['🪙','Duit lama',60,1],['📜','Peta lusuh',100,1],['🪙','Syiling rare',180,1],['💰','Beg duit',350,1],['🪙','Syiling berkarat',-5,1],['🪆','Boneka',-15,1],['🎾','Bola',-10,1],['🏀','Bola',-10,1],['⚽','Bola',-10,1],['🪁','Layang-layang',-10,1],['🎮','Konsol rosak',-50,1],['💿','CD lama',-10,1],['📷','Kamera lama',120,1],['🔋','Bateri',-30,1],['🧯','Alat pemadam',-25,1],['🪙','Syiling bersinar',200,1],['🛡️','Perisai kecil',180,1],['⚓','Sauh mini',90,1],['🪝','Mata kail',15,1],['🧳','Beg lama',-20,1],['🪙','Duit emas',500,1],['💎','Batu kristal',600,1],['🪄','Objek misteri',250,1],['🗿','Patung kecil',100,1],['🧿','Manik',40,1],['🧵','Benang',-5,1],['🪙','Syiling bertuah',150,1],['🦴','Tulang',-20,1],['🪳','Serangga',-10,1],['🧹','Berus',-15,1],['🪙','Duit terselit',75,1],['🪜','Tangga kecil',-25,1],['🪧','Papan tanda',-20,1],['🧱','Batu bata lama',-15,1],['🪙','Harta rahsia',1000,1]
+];
+let score=0,found=new Set(),level=1,distance=1,target=null,z=0,ready=false,pull=false,shot=false,rope=0;
+const upgrades=[{name:'Panah Asas',cost:0,dist:1},{name:'Panah Jarak Sederhana',cost:250,dist:2},{name:'Panah Jauh',cost:650,dist:3},{name:'Panah Premium',cost:1300,dist:4},{name:'Panah Ultra',cost:2500,dist:5}];
+let currentUpgrade=0;
+function ui(){document.getElementById('score').textContent=score;document.getElementById('collection').textContent=found.size;document.getElementById('lv').textContent=level}
+function toast(t){let e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',1800)}
+let aimX=0,aimIndex=0,viewX=0,viewY=0,power=0,powerDown=false,flight=null;
+function aim(dir){
+ if(shot){toast("Sasaran sudah dikunci!");return}
+ aimX=Math.max(-1,Math.min(1,aimX+dir*.18));
+ aimIndex=(aimIndex+dir+items.length)%items.length;
+ document.getElementById('pullhint').textContent="Arah: "+(aimX<-.25?"KIRI":aimX>.25?"KANAN":"TENGAH")+" · tekan PANAH";
+ toast(aimX<-.25?"Sasar ke kiri":aimX>.25?"Sasar ke kanan":"Sasaran tengah");
+}
+function shoot(){
+ if(pull){toast("Selesaikan zikir dahulu!");return}
+ if(shot||flight){toast("Sasaran sudah dikunci. Tekan TARIK.");return}
+ let base=Math.floor(Math.random()*items.length);target=items[base];power=Math.max(8,Math.min(100,power));
+ const cx=W*.5,cy=H*.42;flight={x:cx,y:H*.72,tx:cx+aimX*W*.2,ty:cy,progress:0,speed:.018+power*.00035};
+ document.getElementById('mshot').textContent='☐ Panah sedang meluncur';document.getElementById('pullhint').textContent='Panah meluncur ke sasaran';document.getElementById('zikbtn').disabled=true;
+}
+function holdStart(e){e.preventDefault();if(shot||flight||pull)return;powerDown=true;power=0;document.getElementById('shootBtn').setPointerCapture?.(e.pointerId)}
+function holdEnd(e){if(!powerDown)return;powerDown=false;shoot();}
+const sb=document.getElementById('shootBtn');sb.addEventListener('contextmenu',e=>e.preventDefault());sb.addEventListener('copy',e=>e.preventDefault());sb.addEventListener('pointerdown',holdStart);sb.addEventListener('pointerup',holdEnd);sb.addEventListener('pointercancel',holdEnd);sb.addEventListener('pointerleave',e=>{if(powerDown&&e.buttons===0)holdEnd(e)});
+function joyInput(e){const r=joyWrap.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.38;let len=Math.hypot(dx,dy);if(len>max){dx*=max/len;dy*=max/len}joyKnob.style.transform=`translate(${dx}px,${dy}px)`;aimX=Math.max(-1,Math.min(1,dx/max));viewX+=dx/max*.035;viewY+=dy/max*.035;viewY=Math.max(-.45,Math.min(.45,viewY));}
+const joyWrap=document.getElementById('joyWrap'),joyKnob=document.getElementById('joyKnob');let joyOn=false;joyWrap.addEventListener('pointerdown',e=>{joyOn=true;joyWrap.setPointerCapture(e.pointerId);joyInput(e)});joyWrap.addEventListener('pointermove',e=>{if(joyOn)joyInput(e)});joyWrap.addEventListener('pointerup',()=>{joyOn=false;joyKnob.style.transform='translate(0,0)'});joyWrap.addEventListener('pointercancel',()=>{joyOn=false;joyKnob.style.transform='translate(0,0)'});
+
+function pullStart(){
+ if(!shot||!target){toast("Tunggu panah sampai sasaran dahulu!");return}
+ if(ready){toast("Tali sudah ditarik—terus baca zikir!");return}
+ pull=true;ready=true;
+ document.getElementById('zikbtn').disabled=false;
+ document.getElementById('pullhint').textContent='Baca Subhanallah — tali bergerak';
+ toast("TALI DITARIK! Baca Subhanallah 20 kali");
+}
+let recog=null,listening=false,lastPhraseAt=0,micStarting=false,micStream=null,micEnabled=false;
+async function startListening(){
+ if(!ready||z>=20)return;
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){toast('Pengecaman suara tidak disokong. Buka game dalam Google Chrome.');return}
+ if(listening){try{recog.stop()}catch(e){} listening=false;document.getElementById('zikbtn').textContent='🎤 BACA SENDIRI';return}
+ if(micStarting)return;
+ micStarting=true;
+ try{
+  // Minta izin mikrofon secara terus selepas sentuhan pengguna
+  if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+   micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+   micStream.getTracks().forEach(t=>t.stop());
+   micStream=null;
+  }
+  recog=new SR();
+  recog.lang='ms-MY';
+  recog.continuous=true;
+  recog.interimResults=false;
+  recog.maxAlternatives=3;
+  recog.onstart=()=>{listening=true;micStarting=false;document.getElementById('zikbtn').textContent='🔴 MIC AKTIF — BERHENTI'};
+  recog.onerror=(e)=>{
+   listening=false;micStarting=false;
+   document.getElementById('zikbtn').textContent='🎤 BACA SENDIRI';
+   let msg=e.error==='not-allowed'||e.error==='service-not-allowed'?'Benarkan akses mikrofon pada Chrome.':e.error==='no-speech'?'Suara tidak dikesan. Cuba baca lebih jelas.':'Mic: '+e.error;
+   toast(msg);
+  };
+  recog.onend=()=>{listening=false;micStarting=false;if(ready&&z<20)document.getElementById('zikbtn').textContent='🎤 BACA SENDIRI'};
+  recog.onresult=(ev)=>{
+   for(let i=ev.resultIndex;i<ev.results.length;i++){
+    if(!ev.results[i].isFinal)continue;
+    let phrase=ev.results[i][0].transcript.toLowerCase().replace(/[.,!?]/g,' ').trim();
+    // Satu sebutan yang dikenal = satu kiraan, elak kira teks interim berulang
+    if(/subhanallah|subhan allah|سبحان الله/.test(phrase)&&Date.now()-lastPhraseAt>450){
+     lastPhraseAt=Date.now();z=Math.min(20,z+1);
+     document.getElementById('count').textContent=z+' / 20';
+     document.getElementById('ropefill').style.width=(z*5)+'%';
+     document.getElementById('pullhint').textContent='Suara dikesan — tali bergerak';
+     if(z>=20){
+      document.getElementById('zikbtn').disabled=true;
+      document.getElementById('mzikir').textContent='☑ Subhanallah 20×';
+      try{recog.stop()}catch(e){}
+      listening=false;
+      setTimeout(reveal,500);
+      return;
+     }
+    }
+   }
+  };
+  recog.start();
+ }catch(e){
+  micStarting=false;listening=false;
+  document.getElementById('zikbtn').textContent='🎤 BACA SENDIRI';
+  toast('Mic tidak dapat dibuka. Semak izin mikrofon Chrome.');
+  console.log('Mic error:',e);
+ }
+}
+function reveal(){pull=false;ready=false;shot=false;found.add(target[1]);score+=target[2];if(score<0)score=0;level=1+Math.floor(score/500);ui();document.getElementById('mresult').textContent='☑ Dapatkan hasil';document.getElementById('itememoji').textContent=target[0];document.getElementById('itemname').textContent=target[1];document.getElementById('itemdesc').textContent=target[2]>=0?'Hasil yang baik! Mata bertambah.':'Barang buruk! Mata dipotong.';document.getElementById('itempoints').textContent=(target[2]>=0?'+':'')+target[2]+' mata';document.getElementById('result').style.display='block';document.getElementById('zikbtn').disabled=true;document.getElementById('pullhint').textContent='Panah sasaran baharu';document.getElementById('ropefill').style.width='0%';document.getElementById('count').textContent='0 / 20';document.getElementById('mzikir').textContent='☐ Subhanallah 20×';document.getElementById('mresult').textContent='☐ Dapatkan hasil'}
+function closeResult(){document.getElementById('result').style.display='none';target=null}
+function openShop(){document.getElementById('shopscore').textContent=score;let list=document.getElementById('shopitems');list.innerHTML='';upgrades.forEach((u,i)=>{let owned=i<=currentUpgrade;let row=document.createElement('div');row.className='shoprow';row.innerHTML=`<div><b>${u.name}</b><div class="small">Jarak panahan ×${u.dist}</div></div><button ${owned?'disabled':''}>${owned?'DIMILIKI':'💰 '+u.cost}</button>`;let b=row.querySelector('button');b.onclick=()=>{if(score<u.cost){toast('Mata tidak cukup!');return}score-=u.cost;currentUpgrade=i;distance=u.dist;ui();openShop();toast('Upgrade berjaya! Jarak panahan meningkat.')};list.appendChild(row)});document.getElementById('shop').style.display='block'}
+function closeShop(){document.getElementById('shop').style.display='none'}
+/* Underwater art: dense random objects and gently moving marine life */
+let bubbles=Array.from({length:80},()=>({x:Math.random()*W,y:Math.random()*H,r:1+Math.random()*4,v:.25+Math.random()*1.2}));
+let fish=Array.from({length:58},()=>({x:Math.random()*W,y:Math.random()*H*.78,homeX:Math.random()*W,homeY:Math.random()*H*.78,s:.16+Math.random()*.34,dir:Math.random()<.5?-1:1,alpha:.18+Math.random()*.25,phase:Math.random()*6.28}));
+let debris=Array.from({length:260},()=>({x:Math.random()*W,y:H*.12+Math.random()*H*.82,kind:Math.floor(Math.random()*items.length),alpha:.20+Math.random()*.22,scale:.34+Math.random()*.68}));
+let time=0;
+function draw(){requestAnimationFrame(draw);time+=.01;if(powerDown)power=Math.min(100,power+.8);document.getElementById("powerLabel").textContent=Math.round(power)+"%";document.getElementById("powerBox").style.setProperty("--p",power);ctx.clearRect(0,0,W,H);
+let grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,'#087f9c');grad.addColorStop(.4,'#07546c');grad.addColorStop(1,'#071e1c');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+// light rays
+for(let i=0;i<7;i++){ctx.beginPath();ctx.moveTo(W*(.15+i*.12),0);ctx.lineTo(W*(.05+i*.15),H*.72);ctx.lineTo(W*(.12+i*.14),H*.72);ctx.closePath();ctx.fillStyle='rgba(170,240,255,.035)';ctx.fill()}
+// sea bed
+ctx.fillStyle='#122f26';ctx.beginPath();ctx.moveTo(0,H*.72);for(let x=0;x<W;x+=30)ctx.lineTo(x,H*.72+Math.sin(x*.012+time)*25+Math.random()*3);ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.fill();
+for(let d of debris){let item=items[d.kind];ctx.globalAlpha=d.alpha;ctx.font=(20*d.scale)+'px serif';ctx.fillText(item[0],((d.x-viewX*W*1.7)%W+W)%W,((d.y-viewY*H*1.2)%H+H)%H);ctx.globalAlpha=1}
+fish.forEach(f=>{f.phase+=.003;f.x=f.homeX+Math.sin(f.phase)*7;f.y=f.homeY+Math.cos(f.phase*.7)*4;ctx.globalAlpha=f.alpha;ctx.font=(22*f.s)+'px serif';ctx.fillText(['🐟','🐠','🦈','🐙','🦑','🦐','🦀','🐢','🪼'][Math.floor(f.homeX/37+f.homeY/53)%9],f.x-viewX*W*.8,f.y-viewY*H*.8);ctx.globalAlpha=1});
+bubbles.forEach(b=>{b.y-=b.v;if(b.y<0)b.y=H+5;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.strokeStyle='rgba(180,245,255,.3)';ctx.stroke()});
+// reticle
+ctx.strokeStyle='#ffe25d';ctx.lineWidth=2;let cx=W*(.5+aimX*.18-viewX*.5),cy=H*(.42-viewY*.5);ctx.beginPath();ctx.arc(cx,cy,22,0,Math.PI*2);ctx.moveTo(cx-34,cy);ctx.lineTo(cx-12,cy);ctx.moveTo(cx+12,cy);ctx.lineTo(cx+34,cy);ctx.moveTo(cx,cy-34);ctx.lineTo(cx,cy-12);ctx.moveTo(cx,cy+12);ctx.lineTo(cx,cy+34);ctx.stroke();
+// compact realistic fishing speargun centered in first-person view
+ctx.save();ctx.translate(W*.5,H*.94);ctx.scale(.68,.68);
+// dark barrel and stock
+ctx.fillStyle='#172630';ctx.beginPath();ctx.moveTo(-17,54);ctx.lineTo(-11,-90);ctx.lineTo(11,-90);ctx.lineTo(17,54);ctx.closePath();ctx.fill();
+ctx.fillStyle='#246b8d';ctx.fillRect(-14,-35,28,13);ctx.fillRect(-16,26,32,12);
+// barrel rail
+ctx.strokeStyle='#c9d4dc';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,-78);ctx.lineTo(0,-160);ctx.stroke();
+// bow arms / rubber bands
+ctx.strokeStyle='#d7ad4b';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(-12,-72);ctx.quadraticCurveTo(-36,-45,-38,8);ctx.moveTo(12,-72);ctx.quadraticCurveTo(36,-45,38,8);ctx.stroke();
+// metal bow tips and muzzle
+ctx.fillStyle='#aab9c5';ctx.fillRect(-17,-77,8,10);ctx.fillRect(9,-77,8,10);
+// grip
+ctx.fillStyle='#111a22';ctx.beginPath();ctx.moveTo(9,8);ctx.lineTo(28,8);ctx.lineTo(34,54);ctx.lineTo(19,58);ctx.closePath();ctx.fill();
+// reel and gold line
+ctx.fillStyle='#263b4a';ctx.beginPath();ctx.arc(29,22,17,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#d9b75a';ctx.lineWidth=4;ctx.beginPath();ctx.arc(29,22,11,0,Math.PI*2);ctx.stroke();
+// spear resting in barrel, pointed tip
+ctx.strokeStyle='#dbe5ed';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,-80);ctx.lineTo(0,-164);ctx.stroke();ctx.fillStyle='#e4edf4';ctx.beginPath();ctx.moveTo(0,-177);ctx.lineTo(-8,-160);ctx.lineTo(0,-164);ctx.lineTo(8,-160);ctx.closePath();ctx.fill();
+ctx.restore();
+// arrow flight visual
+if(flight){flight.progress=Math.min(1,flight.progress+flight.speed);let t=flight.progress;let fx=flight.x+(flight.tx-flight.x)*t,fy=flight.y+(flight.ty-flight.y)*t;ctx.save();ctx.translate(fx,fy);ctx.rotate(Math.atan2(flight.ty-flight.y,flight.tx-flight.x)+Math.PI/2);ctx.strokeStyle='#dce8f0';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,16);ctx.lineTo(0,-24);ctx.stroke();ctx.fillStyle='#dce8f0';ctx.beginPath();ctx.moveTo(0,-30);ctx.lineTo(-6,-18);ctx.lineTo(6,-18);ctx.fill();ctx.restore();if(t>=1){flight=null;shot=true;/* Senyap: jangan beritahu atau dedahkan apa-apa apabila panah sampai. */}}
+// Tali lurus dari hujung alat panah ke sasaran; memendek lurus semasa ditarik
+if(pull&&target){const sx=W*.5,sy=H*.77,tx=W*.5+aimX*W*.2,ty=H*.42;const remain=Math.max(0,1-z/20);const ex=sx+(tx-sx)*remain,ey=sy+(ty-sy)*remain;ctx.save();ctx.strokeStyle='#f1c56c';ctx.lineWidth=2.5;ctx.shadowColor='#ffe18a';ctx.shadowBlur=5;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.stroke();ctx.restore();}
+// Jangan dedahkan objek selepas terkena panah — kekalkan misteri sehingga hasil ditarik
+if(shot&&target){ctx.globalAlpha=0.25;ctx.font="30px serif";ctx.textAlign="center";ctx.fillText('❔',cx,cy-52);ctx.textAlign="start";ctx.globalAlpha=1;}
+// fish target glow after shot
+if(shot){ctx.beginPath();ctx.arc(cx,cy,42+Math.sin(time*4)*4,0,Math.PI*2);ctx.strokeStyle='#ffdd5a';ctx.lineWidth=3;ctx.stroke()}
+}
+draw();
+</script>
+</body></html>
+<style>/* Kedai tepat di bawah panel misi */#shopBtn{position:absolute;left:8px;top:157px;bottom:auto;width:54px;height:43px;z-index:10;font-size:9px;padding:2px;border-radius:9px}@media(max-height:620px){#shopBtn{top:143px;width:48px;height:39px}}</style>
