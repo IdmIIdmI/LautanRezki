@@ -59,7 +59,7 @@ button:active{transform:scale(.96)}button:disabled{opacity:.45}
 </head>
 <body>
 <div id="game">
-<canvas id="c"></canvas><div id="weapon" aria-hidden="true"></div><div id="powerBox"><div id="powerInner"><small style="font-size:8px">KUASA</small><div id="powerLabel">0%</div></div></div><button id="shootBtn">🏹 PANAH<br><small>TAHAN</small></button><button id="pullBtn" onclick="pullStart()">🪢 TARIK</button>
+<canvas id="c"></canvas><div id="weapon" aria-hidden="true"></div><div id="powerBox"><div id="powerInner"><small style="font-size:8px">KUASA</small><div id="powerLabel">0%</div></div></div><button id="soundBtn" onclick="toggleSound()" style="position:absolute;top:8px;right:8px;z-index:12;padding:7px 10px;font-size:12px">🔊</button><button id="shootBtn">🏹 PANAH<br><small>TAHAN</small></button><button id="pullBtn" onclick="pullStart()">🪢 TARIK</button>
 <div class="hud" id="top"><div><div class="stat">🤿 Lutfy · Lv <span id="lv">1</span></div><div class="small">❤❤❤❤❤</div></div><div id="title">MISI SELAM & PANAH<br><span class="small">Misteri Dasar Sungai</span></div><div class="stat">⭐ <span id="score">0</span><br><span class="small">📦 <span id="collection">0</span>/100</span></div></div>
 <div class="hud" id="mission"><b>Misi</b><div>☑ Selam ke dasar</div><div id="mshot">☐ Panah sasaran rawak</div><div id="mzikir">☐ Subhanallah 20×</div><div id="mresult">☐ Dapatkan hasil</div></div>
 <div id="right"><div id="joyWrap"><div id="joyBase"></div><div id="joyKnob"></div><small>JOYSTIK 360°</small></div><button class="action" id="shopBtn" onclick="openShop()">🛒<br>KEDAI</button></div>
@@ -79,6 +79,19 @@ const upgrades=[{name:'Panah Asas',cost:0,dist:1},{name:'Panah Jarak Sederhana',
 let currentUpgrade=0;
 function ui(){document.getElementById('score').textContent=score;document.getElementById('collection').textContent=found.size;document.getElementById('lv').textContent=level}
 function toast(t){let e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',1800)}
+// AUDIO: bunyi bawah air, panah, tali dan suara hasil (semua sintesis, tanpa fail luar)
+let soundOn=true,audioCtx=null,ambienceTimer=null,voiceBusy=false;
+function initAudio(){if(!soundOn)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();if(!ambienceTimer)ambienceTimer=setInterval(()=>{if(soundOn&&!voiceBusy&&audioCtx&&audioCtx.state==='running'){bubbleSound();if(Math.random()<.32)diverBreath()}},2200)}catch(e){}}
+function tone(freq,dur,type='sine',vol=.12,slide=0){if(!soundOn)return;initAudio();if(!audioCtx)return;try{let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(freq,audioCtx.currentTime);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide),audioCtx.currentTime+dur);g.gain.setValueAtTime(.0001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(vol,audioCtx.currentTime+.015);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+dur);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+dur+.02)}catch(e){}}
+function bubbleSound(){tone(380+Math.random()*330,.12,'sine',.045,-150);setTimeout(()=>tone(520+Math.random()*220,.1,'sine',.035,-220),90)}
+function diverBreath(){if(!soundOn)return; tone(95,.34,'triangle',.035,-25);setTimeout(()=>tone(125,.25,'sine',.025,-40),360)}
+function shootSound(){tone(180,.16,'sawtooth',.09,-100);setTimeout(()=>tone(720,.08,'triangle',.06,-400),80)}
+function hitSound(){tone(260,.1,'triangle',.08,-100);setTimeout(()=>tone(110,.22,'sine',.08,-40),90)}
+function pullSound(){tone(320,.12,'triangle',.06,-100);setTimeout(()=>tone(420,.12,'sine',.045,-130),140)}
+function successSound(){tone(660,.15,'sine',.1,100);setTimeout(()=>tone(880,.18,'sine',.1,80),140);setTimeout(()=>tone(1100,.28,'sine',.09,120),300)}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';if(soundOn){initAudio();bubbleSound();toast('Bunyi dihidupkan')}else{if(ambienceTimer){clearInterval(ambienceTimer);ambienceTimer=null}toast('Bunyi dimatikan')}}
+function speakResult(item){if(!soundOn||!('speechSynthesis'in window))return;try{speechSynthesis.cancel();voiceBusy=true;let u=new SpeechSynthesisUtterance('Alhamdulillah. Berjaya mendapat '+item[1]+'. '+(item[2]>=0?'Mata bertambah '+item[2]+' mata.':'Mata ditolak '+Math.abs(item[2])+' mata.'));u.lang='ms-MY';u.rate=.92;u.pitch=1;u.onend=()=>voiceBusy=false;u.onerror=()=>voiceBusy=false;speechSynthesis.speak(u)}catch(e){voiceBusy=false}}
+window.addEventListener('pointerdown',()=>initAudio(),{once:true});
 let aimX=0,aimIndex=0,viewX=0,viewY=0,power=0,powerDown=false,flight=null;
 function aim(dir){
  if(shot){toast("Sasaran sudah dikunci!");return}
@@ -88,6 +101,7 @@ function aim(dir){
  toast(aimX<-.25?"Sasar ke kiri":aimX>.25?"Sasar ke kanan":"Sasaran tengah");
 }
 function shoot(){
+ initAudio();shootSound();
  if(pull){toast("Selesaikan zikir dahulu!");return}
  if(shot||flight){toast("Sasaran sudah dikunci. Tekan TARIK.");return}
  let base=Math.floor(Math.random()*items.length);target=items[base];power=Math.max(8,Math.min(100,power));
@@ -103,7 +117,7 @@ const joyWrap=document.getElementById('joyWrap'),joyKnob=document.getElementById
 function pullStart(){
  if(!shot||!target){toast("Tunggu panah sampai sasaran dahulu!");return}
  if(ready){toast("Tali sudah ditarik—terus baca zikir!");return}
- pull=true;ready=true;
+ pull=true;ready=true;initAudio();pullSound();
  document.getElementById('zikbtn').disabled=false;
  document.getElementById('pullhint').textContent='Baca Subhanallah — tali bergerak';
  toast("TALI DITARIK! Baca Subhanallah 20 kali");
@@ -165,8 +179,8 @@ async function startListening(){
   console.log('Mic error:',e);
  }
 }
-function reveal(){pull=false;ready=false;shot=false;found.add(target[1]);score+=target[2];if(score<0)score=0;level=1+Math.floor(score/500);ui();document.getElementById('mresult').textContent='☑ Dapatkan hasil';document.getElementById('itememoji').textContent=target[0];document.getElementById('itemname').textContent=target[1];document.getElementById('itemdesc').textContent=target[2]>=0?'Hasil yang baik! Mata bertambah.':'Barang buruk! Mata dipotong.';document.getElementById('itempoints').textContent=(target[2]>=0?'+':'')+target[2]+' mata';document.getElementById('result').style.display='block';document.getElementById('zikbtn').disabled=true;document.getElementById('pullhint').textContent='Panah sasaran baharu';document.getElementById('ropefill').style.width='0%';document.getElementById('count').textContent='0 / 20';document.getElementById('mzikir').textContent='☐ Subhanallah 20×';document.getElementById('mresult').textContent='☐ Dapatkan hasil'}
-function closeResult(){document.getElementById('result').style.display='none';target=null}
+function reveal(){pull=false;ready=false;shot=false;found.add(target[1]);score+=target[2];if(score<0)score=0;level=1+Math.floor(score/500);ui();document.getElementById('mresult').textContent='☑ Dapatkan hasil';document.getElementById('itememoji').textContent=target[0];document.getElementById('itemname').textContent=target[1];document.getElementById('itemdesc').textContent=target[2]>=0?'Hasil yang baik! Mata bertambah.':'Barang buruk! Mata dipotong.';document.getElementById('itempoints').textContent=(target[2]>=0?'+':'')+target[2]+' mata';document.getElementById('result').style.display='block';document.getElementById('zikbtn').disabled=true;document.getElementById('pullhint').textContent='Panah sasaran baharu';document.getElementById('ropefill').style.width='0%';document.getElementById('count').textContent='0 / 20';document.getElementById('mzikir').textContent='☐ Subhanallah 20×';document.getElementById('mresult').textContent='☐ Dapatkan hasil';z=0;initAudio();successSound();speakResult(target)}
+function closeResult(){document.getElementById('result').style.display='none';target=null;z=0;document.getElementById('count').textContent='0 / 20';document.getElementById('ropefill').style.width='0%';document.getElementById('zikbtn').disabled=true;if('speechSynthesis'in window)speechSynthesis.cancel();voiceBusy=false}
 function openShop(){document.getElementById('shopscore').textContent=score;let list=document.getElementById('shopitems');list.innerHTML='';upgrades.forEach((u,i)=>{let owned=i<=currentUpgrade;let row=document.createElement('div');row.className='shoprow';row.innerHTML=`<div><b>${u.name}</b><div class="small">Jarak panahan ×${u.dist}</div></div><button ${owned?'disabled':''}>${owned?'DIMILIKI':'💰 '+u.cost}</button>`;let b=row.querySelector('button');b.onclick=()=>{if(score<u.cost){toast('Mata tidak cukup!');return}score-=u.cost;currentUpgrade=i;distance=u.dist;ui();openShop();toast('Upgrade berjaya! Jarak panahan meningkat.')};list.appendChild(row)});document.getElementById('shop').style.display='block'}
 function closeShop(){document.getElementById('shop').style.display='none'}
 /* Underwater art: dense random objects and gently moving marine life */
@@ -204,7 +218,7 @@ ctx.fillStyle='#263b4a';ctx.beginPath();ctx.arc(29,22,17,0,Math.PI*2);ctx.fill()
 ctx.strokeStyle='#dbe5ed';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,-80);ctx.lineTo(0,-164);ctx.stroke();ctx.fillStyle='#e4edf4';ctx.beginPath();ctx.moveTo(0,-177);ctx.lineTo(-8,-160);ctx.lineTo(0,-164);ctx.lineTo(8,-160);ctx.closePath();ctx.fill();
 ctx.restore();
 // arrow flight visual
-if(flight){flight.progress=Math.min(1,flight.progress+flight.speed);let t=flight.progress;let fx=flight.x+(flight.tx-flight.x)*t,fy=flight.y+(flight.ty-flight.y)*t;ctx.save();ctx.translate(fx,fy);ctx.rotate(Math.atan2(flight.ty-flight.y,flight.tx-flight.x)+Math.PI/2);ctx.strokeStyle='#dce8f0';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,16);ctx.lineTo(0,-24);ctx.stroke();ctx.fillStyle='#dce8f0';ctx.beginPath();ctx.moveTo(0,-30);ctx.lineTo(-6,-18);ctx.lineTo(6,-18);ctx.fill();ctx.restore();if(t>=1){flight=null;shot=true;/* Senyap: jangan beritahu atau dedahkan apa-apa apabila panah sampai. */}}
+if(flight){flight.progress=Math.min(1,flight.progress+flight.speed);let t=flight.progress;let fx=flight.x+(flight.tx-flight.x)*t,fy=flight.y+(flight.ty-flight.y)*t;ctx.save();ctx.translate(fx,fy);ctx.rotate(Math.atan2(flight.ty-flight.y,flight.tx-flight.x)+Math.PI/2);ctx.strokeStyle='#dce8f0';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,16);ctx.lineTo(0,-24);ctx.stroke();ctx.fillStyle='#dce8f0';ctx.beginPath();ctx.moveTo(0,-30);ctx.lineTo(-6,-18);ctx.lineTo(6,-18);ctx.fill();ctx.restore();if(t>=1){flight=null;shot=true;hitSound();/* Objek kekal misteri sehingga ditarik. */}}
 // Tali lurus dari hujung alat panah ke sasaran; memendek lurus semasa ditarik
 if(pull&&target){const sx=W*.5,sy=H*.77,tx=W*.5+aimX*W*.2,ty=H*.42;const remain=Math.max(0,1-z/20);const ex=sx+(tx-sx)*remain,ey=sy+(ty-sy)*remain;ctx.save();ctx.strokeStyle='#f1c56c';ctx.lineWidth=2.5;ctx.shadowColor='#ffe18a';ctx.shadowBlur=5;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.stroke();ctx.restore();}
 // Jangan dedahkan objek selepas terkena panah — kekalkan misteri sehingga hasil ditarik
